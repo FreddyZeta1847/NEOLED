@@ -14,10 +14,12 @@ NEOLED/
 ├── docs/
 │   └── wiring_guide.md
 ├── esp32/
-│   ├── esp32 pins.jpeg
-│   ├── esp32_led_controller.ino
-│   └── red led connection.jpeg
+│   ├── esp32_led_controller/
+│   │   └── esp32_led_controller.ino
 ├── pc/
-├── README.md
-└── Screenshot 2026-04-17 163411.png
+│   ├── hand_landmarker.task
+│   ├── hand_tracker.py
+│   ├── requirements.txt
+│   └── serial_comm.py
+└── README.md
 ```
