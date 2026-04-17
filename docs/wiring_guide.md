@@ -97,87 +97,90 @@ The 5 GPIO pins we use are marked with arrows above.
 
 ## Wiring: Step by Step
 
+All 5 LEDs will be lined up neatly at the bottom of the breadboard (left side), with anodes in **column A**. A jumper wire connects each GPIO pin to the LED area.
+
 ### How one LED circuit works
 
 ```
-ESP32 GPIO pin ──→ jumper wire ──→ RESISTOR ──→ LED (long leg +) → LED (short leg -) ──→ GND rail
+GPIO pin row ──→ JUMPER WIRE ──→ row N, col D ──→ RESISTOR ──→ row N+1 ──→ LED anode (col A) ──→ LED cathode ──→ minus (-) rail
 ```
 
-Electricity flows: GPIO → wire → resistor → LED → ground. Done.
+### The layout
+
+| LED # | Finger | GPIO | Wire goes to row | Resistor rows | LED anode row, col A |
+|-------|--------|------|-----------------|---------------|---------------------|
+| 1     | Thumb  | 2    | row 40          | 40 → 41       | row 41              |
+| 2     | Index  | 4    | row 43          | 43 → 44       | row 44              |
+| 3     | Middle | 13   | row 46          | 46 → 47       | row 47              |
+| 4     | Ring   | 12   | row 49          | 49 → 50       | row 50              |
+| 5     | Pinky  | 14   | row 52          | 52 → 53       | row 53              |
 
 ---
 
-### LED #1 — THUMB (GPIO 2, right side of ESP32)
+### LED #1 — THUMB (GPIO 2)
 
-GPIO 2 is on the **right side**, near the bottom of the ESP32. Look at your board and find which breadboard row it sits in.
+GPIO 2 is on the **right side** of the ESP32, near the bottom. Find which breadboard row it sits in.
 
-**Step 1:** Find GPIO 2's row on the right side (columns f-j). Let's call it row R.
+**Step 1 — Jumper wire:** Plug one end into **GPIO 2's row** (right side, any free column like col j). Plug the other end into **row 40, column d** (left side).
 
-**Step 2:** Place a jumper wire from **row R, column j** to a free area on the left side of the breadboard. Pick **row 1, column a**.
+**Step 2 — Resistor:** Plug one end into **row 40, column c**. Plug the other end into **row 41, column c**. (Same column, spans two rows. Direction doesn't matter.)
 
-**Step 3:** Place a 220 ohm resistor from **row 1, column b** to **row 2, column b**. (Bridges two rows. Direction doesn't matter.)
-
-**Step 4:** Place the LED:
-- **Long leg (+)** into **row 2, column c** (same row as resistor's other end)
-- **Short leg (-)** into the **left minus (-) rail**
+**Step 3 — LED:**
+- **Long leg (+, anode)** into **row 41, column a**
+- **Short leg (-, cathode, flat side)** into the **LEFT minus (-) rail**
 
 ```
-    - rail     a      b      c      d      e
-      |        |      |      |
-      |   [wire from GPIO2]  |      
-      |     row1 ────[RESISTOR]──── row2
-      |                      |
-      ●←── LED short leg     LED long leg (row2, col c)
-    (flat side)
+    - rail     a       b       c       d       e
+      |        |               |       |
+      |        |               |    [WIRE from GPIO 2]     row 40
+      |        |            [RESISTOR]                       
+      |     [LED +]         [RESISTOR]                     row 41
+      ●──[LED -]            
+      |  (short leg,
+      |   flat side)
 ```
 
-**That's it! One LED done.** The circuit is: GPIO 2 → wire → resistor → LED → GND rail.
+The circuit: GPIO 2 → wire → row 40 → resistor → row 41 → LED → GND. Done!
 
 ---
 
-### LED #2 — INDEX (GPIO 4, right side of ESP32)
+### LED #2 — INDEX (GPIO 4)
 
-GPIO 4 is also on the **right side**, just above GPIO 2.
+GPIO 4 is on the **right side**, just above GPIO 2. Same pattern:
 
-Repeat the same pattern using **rows 4-5**:
-
-1. Jumper wire from GPIO 4's row (column j) → **row 4, column a**
-2. Resistor from **row 4, column b** → **row 5, column b**
-3. LED long leg → **row 5, column c** / LED short leg → **minus (-) rail**
+1. **Wire:** GPIO 4's row (right side, col j) → **row 43, col d**
+2. **Resistor:** **row 43, col c** → **row 44, col c**
+3. **LED:** long leg (+) → **row 44, col a** / short leg (-) → **minus (-) rail**
 
 ---
 
-### LED #3 — MIDDLE (GPIO 13, left side of ESP32)
+### LED #3 — MIDDLE (GPIO 13)
 
-GPIO 13 is on the **left side**. Its pin already connects to a row on the left half (columns a-e).
+GPIO 13 is on the **left side**. Same pattern:
 
-This one is easier — no long jumper wire needed:
-
-1. Find GPIO 13's row. The pin is already in column e (or d). Let's call it row M.
-2. Resistor from **row M, column a** → **row M+1, column a** (next row down)
-3. LED long leg → **row M+1, column b** / LED short leg → **minus (-) rail**
-
-The GPIO pin and resistor are in the same row, so they're already connected!
+1. **Wire:** GPIO 13's row (left side, col a) → **row 46, col d**
+2. **Resistor:** **row 46, col c** → **row 47, col c**
+3. **LED:** long leg (+) → **row 47, col a** / short leg (-) → **minus (-) rail**
 
 ---
 
-### LED #4 — RING (GPIO 12, left side)
+### LED #4 — RING (GPIO 12)
 
-Same pattern as LED #3. GPIO 12 is on the left side, two pins above GPIO 13.
+GPIO 12 is on the **left side**, two pins above GPIO 13. Same pattern:
 
-1. Find GPIO 12's row (column e or d)
-2. Resistor from that row (column a) → next row (column a)
-3. LED long leg in resistor's second row (column b) / short leg → minus (-) rail
+1. **Wire:** GPIO 12's row (left side, col a) → **row 49, col d**
+2. **Resistor:** **row 49, col c** → **row 50, col c**
+3. **LED:** long leg (+) → **row 50, col a** / short leg (-) → **minus (-) rail**
 
 ---
 
-### LED #5 — PINKY (GPIO 14, left side)
+### LED #5 — PINKY (GPIO 14)
 
-Same pattern. GPIO 14 is on the left side, two pins above GPIO 12.
+GPIO 14 is on the **left side**, above GPIO 12. Same pattern:
 
-1. Find GPIO 14's row
-2. Resistor from that row (column a) → next row (column a)
-3. LED long leg in next row (column b) / short leg → minus (-) rail
+1. **Wire:** GPIO 14's row (left side, col a) → **row 52, col d**
+2. **Resistor:** **row 52, col c** → **row 53, col c**
+3. **LED:** long leg (+) → **row 53, col a** / short leg (-) → **minus (-) rail**
 
 ---
 
@@ -185,11 +188,11 @@ Same pattern. GPIO 14 is on the left side, two pins above GPIO 12.
 
 After wiring all 5 LEDs, you should have:
 
-- [x] 5 LEDs with short legs all in the **minus (-) rail**
-- [x] 5 resistors, each connecting an LED to a GPIO pin's row
-- [x] 2 jumper wires for the right-side GPIOs (2 and 4) crossing to the left half
-- [x] USB cable plugged in from ESP32 to PC (for power + communication)
-- [x] Nothing in GPIO 1/TX, 3/RX, or GPIO 0
+- [x] 5 jumper wires — each connecting a GPIO pin row to rows 40, 43, 46, 49, 52
+- [x] 5 resistors — each bridging two rows (e.g. 40→41, 43→44, etc.)
+- [x] 5 LEDs — all with long legs (+) in **column A**, all short legs (-) in the **LEFT minus (-) rail**
+- [x] USB cable plugged in from ESP32 to PC
+- [x] Nothing plugged into GPIO 1/TX, 3/RX, or GPIO 0
 
 ---
 

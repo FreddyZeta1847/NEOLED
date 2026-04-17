@@ -26,37 +26,39 @@ Build an interactive system where a PC webcam tracks hand/finger movements using
 
 ## Part 1: Hardware Setup (Wiring Guide)
 
+### Board confirmed
+Freenove ESP32 GPIO Extension Board (photo: `esp32/esp32 pins.jpeg`)
+- Left power rail: GND (-) and 5V (+) — already connected via screw terminals
+- Right power rail: GND (-) and EXT-3.3V (+) — already connected
+
 ### Components needed
-- ESP32-WROVER (already on breadboard)
-- 5 LEDs (any color)
-- 5x 220Ω resistors (red-red-brown band)
-- 6 jumper wires (male-to-male or male-to-female depending on breadboard)
-- USB cable (to connect ESP32 to PC)
+- 5 LEDs (any color from kit)
+- 5x 220 ohm resistors (red-red-brown-gold stripes)
+- 5 jumper wires (male-to-male)
+- USB cable (ESP32 to PC)
 
-### Wiring diagram (per LED)
+### Pin assignments (verified from board photo)
 
+| Finger | GPIO | Board side | Approx breadboard row |
+|--------|------|-----------|----------------------|
+| Thumb  | 2    | RIGHT, near bottom | ~row 29 |
+| Index  | 4    | RIGHT, near bottom | ~row 28 |
+| Middle | 13   | LEFT, near bottom  | ~row 28 |
+| Ring   | 12   | LEFT                | ~row 26 |
+| Pinky  | 14   | LEFT                | ~row 25 |
+
+GND: Use the LEFT minus (-) rail — already connected to GND via screw terminal.
+
+### Wiring per LED
 ```
-ESP32 GPIO pin ──── 220Ω Resistor ──── LED (long leg/anode) ──── LED (short leg/cathode) ──── GND
+GPIO pin row → jumper wire → resistor (220 ohm) → LED long leg (+) → LED short leg (-) → GND rail (-)
 ```
 
-### Pin assignments
-
-| Finger | GPIO Pin | LED Color (suggestion) |
-|--------|----------|----------------------|
-| Thumb  | GPIO 2   | Red                  |
-| Index  | GPIO 4   | Yellow               |
-| Middle | GPIO 5   | Green                |
-| Ring   | GPIO 18  | Blue                 |
-| Pinky  | GPIO 19  | White                |
-
-All LED cathodes (short legs) connect to a shared **GND** rail on the breadboard, which connects to an ESP32 **GND** pin.
-
-### Step-by-step wiring instructions
-1. Place 5 LEDs on the breadboard, spaced apart
-2. Connect a 220Ω resistor from each LED's **anode** (long leg) to a free row
-3. Use jumper wires to connect each resistor's other end to the corresponding ESP32 GPIO pin
-4. Connect all LED **cathodes** (short legs) to the breadboard's ground rail
-5. Connect the breadboard ground rail to the ESP32's **GND** pin
+### Key beginner notes
+- LED long leg = positive (anode), short leg = negative (cathode, flat side of rim)
+- Resistor has no direction — either way works
+- LED short leg always goes into the minus (-) rail on the left side
+- Avoid GPIO 1/TX, 3/RX (serial), GPIO 0 (boot), GPIO 34/35/36/39 (input-only)
 
 ---
 
@@ -64,10 +66,18 @@ All LED cathodes (short legs) connect to a shared **GND** rail on the breadboard
 
 **File:** `esp32/esp32_led_controller.ino`
 
+### GPIO pin mapping in firmware
+```cpp
+int ledPins[5] = {2, 4, 13, 12, 14};
+//                 ^  ^   ^   ^   ^
+//              Thumb Index Middle Ring Pinky
+```
+
 ### Logic
 - Opens serial at 115200 baud
 - Waits for 5-character strings like `"10110"` (1=on, 0=off, one per finger)
-- Maps each character to a GPIO pin and sets HIGH/LOW
+- Character 0 → GPIO 2 (Thumb), char 1 → GPIO 4 (Index), char 2 → GPIO 13 (Middle), char 3 → GPIO 12 (Ring), char 4 → GPIO 14 (Pinky)
+- Sets each pin HIGH (LED on) or LOW (LED off)
 - Sends acknowledgment back over serial
 
 ### Key features
