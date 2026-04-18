@@ -195,20 +195,14 @@ def draw_ui(frame, finger_state, connection, no_serial, width, height):
     cv2.putText(frame, "HAND GESTURE CONTROLLER", (15, 52),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.35, (100, 100, 100), 1)
 
-    # LED power bar: 5 colored squares showing how many fingers are active.
-    bar_x = width - 200
-    cv2.putText(frame, "ACTIVE", (bar_x, 22),
+    # Active LED count in the top right.
+    count_color = (0, 255, 255) if finger_count > 0 else (80, 80, 80)
+    cv2.putText(frame, f"{finger_count}/5", (width - 80, 45),
+                cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 50, 50), 3)   # dark glow
+    cv2.putText(frame, f"{finger_count}/5", (width - 80, 45),
+                cv2.FONT_HERSHEY_SIMPLEX, 1.2, count_color, 2)    # bright text
+    cv2.putText(frame, "LEDs", (width - 75, 18),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.35, (100, 100, 100), 1)
-
-    for i in range(5):
-        sx = bar_x + i * 28
-        if i < finger_count:
-            # Lit square: filled with this finger's neon color.
-            cv2.rectangle(frame, (sx, 30), (sx + 20, 50), FINGER_COLORS[i], -1)
-        else:
-            # Unlit square: dark fill + dim outline.
-            cv2.rectangle(frame, (sx, 30), (sx + 20, 50), (40, 40, 40), -1)
-            cv2.rectangle(frame, (sx, 30), (sx + 20, 50), (60, 60, 60), 1)
 
     # Connection status dot + label.
     if connection:
