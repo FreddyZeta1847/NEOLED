@@ -1,61 +1,84 @@
-# NEOLED
+<p align="center">
+  <h1 align="center">NEOLED</h1>
+  <p align="center"><b>Hand Gesture LED Controller</b></p>
+  <p align="center">Control real LEDs with your fingers using computer vision, MediaPipe, and an ESP32 microcontroller.</p>
+</p>
 
-Control real LEDs with your hand gestures using computer vision and an ESP32 microcontroller.
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.13-3776AB?style=for-the-badge&logo=python&logoColor=white" />
+  <img src="https://img.shields.io/badge/MediaPipe-Hand_Tracking-0097A7?style=for-the-badge&logo=google&logoColor=white" />
+  <img src="https://img.shields.io/badge/OpenCV-Video-5C3EE8?style=for-the-badge&logo=opencv&logoColor=white" />
+  <img src="https://img.shields.io/badge/ESP32-Arduino-E7352C?style=for-the-badge&logo=arduino&logoColor=white" />
+</p>
 
-A Python app uses your webcam and Google's MediaPipe to track your hand in real-time, detecting which fingers are raised. Each finger controls one LED on an ESP32 breadboard circuit: raise a finger and its LED turns on, lower it and it turns off. All communication happens over USB serial.
+---
 
-## Demo
+## What is NEOLED?
 
-```
- Camera sees:          ESP32 does:
+**NEOLED** is an interactive system that bridges computer vision with physical electronics. A Python app uses your webcam to track your hand in real-time — each raised finger lights up a corresponding LED on a breadboard. Lower your finger and the LED turns off. No buttons, no keyboard — just your hand.
 
-   Index up     -->    LED 2 ON
-   Middle up    -->    LED 3 ON
-   Others down  -->    LEDs 1,4,5 OFF
-
- Finger state: "01100" sent over USB serial
-```
+The interface features a futuristic neon HUD with color-coded finger tracking, glowing hand skeleton, and pulsing joints.
 
 ## How It Works
 
 ```
-┌──────────────────┐    USB Serial     ┌──────────────────────┐
-│   PC (Python)    │ ───────────────>  │   ESP32-WROVER       │
-│                  │   sends: "01011"  │                      │
-│  - OpenCV        │   (5 chars,       │  - Arduino C/C++     │
-│  - MediaPipe     │   one per finger) │  - Reads serial      │
-│  - PySerial      │                   │  - Controls 5 GPIOs  │
-└──────────────────┘                   └──────────┬───────────┘
-                                                  │ GPIO pins
-                                          ┌───────┴────────┐
-                                          │  Breadboard     │
-                                          │  5 LEDs + 220R  │
-                                          └─────────────────┘
+Webcam (30 fps)
+     |
+     v
+[ MediaPipe ]  --  Neural network detects 21 hand landmarks
+     |
+     v
+[ Finger Logic ]  --  Compares fingertip vs knuckle positions
+     |
+     v
+[ USB Serial ]  --  Sends "10110" string to ESP32
+     |
+     v
+[ ESP32 + LEDs ]  --  Sets each GPIO HIGH or LOW
 ```
 
-1. **Webcam** captures video frames at ~30fps
-2. **MediaPipe** neural network detects 21 hand landmarks (joint positions)
-3. **Finger detection logic** compares fingertip vs knuckle positions to determine which fingers are raised
-4. A 5-character string like `"10110"` is sent over **USB serial** to the ESP32
-5. **ESP32 firmware** reads the string and sets each GPIO pin HIGH or LOW to control the LEDs
+1. **Capture** — OpenCV grabs frames from the webcam at ~30fps
+2. **Detect** — MediaPipe's pre-trained neural network finds 21 joint positions on the hand
+3. **Analyze** — Our code compares fingertip Y-coordinates vs knuckle Y-coordinates to determine which fingers are raised
+4. **Transmit** — A 5-character string like `"10110"` is sent over USB serial (each char = one finger)
+5. **Control** — The ESP32 reads the string and drives 5 GPIO pins to turn LEDs on/off
 
-## Features
+## Tech Stack
 
-- Real-time hand tracking with MediaPipe's pre-trained neural network
-- Futuristic neon UI overlay with color-coded finger indicators
-- Glowing hand skeleton with pulsing joints and layered fingertip halos
-- Auto-detection of ESP32 COM port
-- Works with or without ESP32 connected (`--no-serial` mode for testing)
+| Component | Technology |
+|-----------|-----------|
+| Language | **Python 3.13** + **C/C++ (Arduino)** |
+| Hand Tracking | **Google MediaPipe** — Hand Landmarker neural network |
+| Video | **OpenCV** — webcam capture and neon UI overlay |
+| Communication | **PySerial** — USB serial at 115200 baud |
+| Microcontroller | **ESP32-WROVER** (Freenove) — 5 GPIO pins driving LEDs |
+| Hardware | **Breadboard** — 5 LEDs + 220 ohm resistors |
 
-## Hardware
+## Project Structure
+
+```
+NEOLED/
+├── esp32/
+│   └── esp32_led_controller/
+│       └── esp32_led_controller.ino    # Arduino firmware
+├── pc/
+│   ├── hand_tracker.py                 # Main app (MediaPipe + OpenCV + neon UI)
+│   ├── serial_comm.py                  # USB serial communication
+│   ├── hand_landmarker.task            # MediaPipe hand model (~7MB)
+│   └── requirements.txt               # Python dependencies
+└── docs/
+    └── wiring_guide.md                 # Beginner-friendly wiring instructions
+```
+
+## Hardware Setup
 
 ### Components
 
 - ESP32-WROVER (Freenove Ultimate Starter Kit)
 - 5 LEDs (any color)
-- 5x 220 ohm resistors
-- Breadboard + jumper wires
-- USB cable (data, not charge-only)
+- 5x 220 ohm resistors (red-red-brown-gold)
+- Jumper wires
+- USB data cable
 
 ### GPIO Pin Mapping
 
@@ -69,39 +92,40 @@ A Python app uses your webcam and Google's MediaPipe to track your hand in real-
 
 ### Wiring
 
-Each LED circuit: `GPIO pin --> jumper wire --> 220 ohm resistor --> LED (long leg +) --> LED (short leg -) --> GND rail`
+Each LED circuit follows the same pattern:
 
-See [docs/wiring_guide.md](docs/wiring_guide.md) for detailed step-by-step instructions with diagrams.
+```
+GPIO pin → jumper wire → 220 ohm resistor → LED (long leg +) → LED (short leg -) → GND rail
+```
+
+See [docs/wiring_guide.md](docs/wiring_guide.md) for a complete beginner guide with diagrams and troubleshooting.
 
 ## Software Setup
 
-### Prerequisites
+### 1. Flash the ESP32
 
-- Python 3.10+
-- Arduino IDE with ESP32 board support
+- Open `esp32/esp32_led_controller/esp32_led_controller.ino` in **Arduino IDE**
+- Install ESP32 board support (Espressif board manager)
+- Select **ESP32 Wrover Module** and the correct COM port
+- Click **Upload**
 
-### ESP32 Firmware
+Test it: open Serial Monitor (115200 baud), type `11111` — all 5 LEDs turn on. Type `00000` — all off.
 
-1. Open `esp32/esp32_led_controller/esp32_led_controller.ino` in Arduino IDE
-2. Select board: **ESP32 Wrover Module** (or ESP32 Dev Module)
-3. Select the correct COM port
-4. Click Upload
-
-Test by opening Serial Monitor (115200 baud) and typing `11111` — all LEDs should turn on.
-
-### Python App
+### 2. Install Python Dependencies
 
 ```bash
 pip install -r pc/requirements.txt
 ```
 
-Run with ESP32 connected:
+### 3. Run
+
+With ESP32 connected:
 
 ```bash
 python pc/hand_tracker.py
 ```
 
-Run without ESP32 (webcam preview only):
+Without ESP32 (webcam preview only):
 
 ```bash
 python pc/hand_tracker.py --no-serial
@@ -109,25 +133,8 @@ python pc/hand_tracker.py --no-serial
 
 Press `q` or close the window to quit.
 
-## Project Structure
+## License
 
-```
-NEOLED/
-├── esp32/
-│   └── esp32_led_controller/
-│       └── esp32_led_controller.ino    # Arduino firmware
-├── pc/
-│   ├── hand_tracker.py                 # Main app (MediaPipe + OpenCV)
-│   ├── serial_comm.py                  # USB serial communication
-│   ├── hand_landmarker.task            # MediaPipe hand model
-│   └── requirements.txt               # Python dependencies
-└── docs/
-    └── wiring_guide.md                 # Beginner wiring instructions
-```
+MIT
 
-## Tech Stack
-
-- **Python** — OpenCV, MediaPipe, PySerial
-- **C/C++** — Arduino framework for ESP32 firmware
-- **MediaPipe** — Google's hand landmark detection neural network (21 points per hand)
-- **ESP32-WROVER** — Dual-core microcontroller with USB serial
+---
