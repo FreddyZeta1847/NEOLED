@@ -28,7 +28,7 @@ Webcam (30 fps)
 [ MediaPipe ]  --  Neural network detects 21 hand landmarks
      |
      v
-[ Finger Logic ]  --  Compares fingertip vs knuckle positions
+[ Finger Logic ]  --  Compares distances from wrist to determine finger state
      |
      v
 [ USB Serial ]  --  Sends "10110" string to ESP32
@@ -39,7 +39,7 @@ Webcam (30 fps)
 
 1. **Capture** — OpenCV grabs frames from the webcam at ~30fps
 2. **Detect** — MediaPipe's pre-trained neural network finds 21 joint positions on the hand
-3. **Analyze** — Our code compares fingertip Y-coordinates vs knuckle Y-coordinates to determine which fingers are raised
+3. **Analyze** — Using the wrist as origin, our code compares distances (Pythagoras) to determine which fingers are extended — this is rotation-invariant, so the hand can point in any direction
 4. **Transmit** — A 5-character string like `"10110"` is sent over USB serial (each char = one finger)
 5. **Control** — The ESP32 reads the string and drives 5 GPIO pins to turn LEDs on/off
 
@@ -48,7 +48,8 @@ Webcam (30 fps)
 | Component | Technology |
 |-----------|-----------|
 | Language | **Python 3.13** + **C/C++ (Arduino)** |
-| Hand Tracking | **Google MediaPipe** — Hand Landmarker neural network |
+| Hand Tracking | **Google MediaPipe** — Hand Landmarker neural network (21 landmarks) |
+| Finger Detection | **Distance-based** — rotation-invariant Pythagorean comparison |
 | Video | **OpenCV** — webcam capture and neon UI overlay |
 | Communication | **PySerial** — USB serial at 115200 baud |
 | Microcontroller | **ESP32-WROVER** (Freenove) — 5 GPIO pins driving LEDs |

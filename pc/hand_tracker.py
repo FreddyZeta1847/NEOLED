@@ -39,12 +39,30 @@ FINGERTIP_IDS = [4, 8, 12, 16, 20]
 # know WHERE it is on screen. IDs are fixed by Google, coordinates change every frame.
 
 
+def dist_sq(p1, p2):
+    """
+    Returns the SQUARED distance between two landmarks (no sqrt needed).
+    We skip sqrt because we only compare distances — if a² > b² then a > b.
+    Uses Pythagoras: dist² = (x2-x1)² + (y2-y1)²
+    """
+    return (p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2
+
+
 def detect_fingers(landmarks):
     """
     Determines which fingers are raised based on landmark positions.
     Returns a list of 5 booleans: [Thumb, Index, Middle, Ring, Pinky].
 
+    Rotation-invariant approach: instead of comparing raw Y coordinates
+    (which only works when the hand points up), we use the WRIST as the
+    origin and compare distances:
+      - dist(wrist, fingertip) vs dist(wrist, PIP joint)
+      - If the tip is FARTHER from the wrist than the PIP → finger is extended
+      - If the tip is CLOSER to the wrist than the PIP → finger is curled
+    This works regardless of hand orientation (up, down, left, right, tilted).
+
     MediaPipe hand landmark IDs:
+        0  = Wrist (our origin point)
         4  = Thumb tip         3  = Thumb IP joint
         8  = Index tip         6  = Index PIP joint
         12 = Middle tip        10 = Middle PIP joint
@@ -52,31 +70,33 @@ def detect_fingers(landmarks):
         20 = Pinky tip         18 = Pinky PIP joint
     """
 
-    fingers = []
+    wrist = landmarks[0]
+    index_mcp = landmarks[5]  # base of the index finger
 
-    # --- THUMB ---
-    # The thumb opens sideways, not up/down. So we compare x-coordinates.
-    # We check wrist vs pinky base to determine left/right hand
-    # (the direction the thumb opens flips between hands).
-    thumb_tip_x = landmarks[4].x
-    thumb_joint_x = landmarks[3].x
-    wrist_x = landmarks[0].x
-    pinky_mcp_x = landmarks[17].x
+    # --- THUMB (special case) ---
+    # The thumb doesn't curl toward the wrist like other fingers — it curls
+    # ACROSS the palm, staying roughly the same distance from the wrist.
+    # So we use the INDEX FINGER BASE (landmark 5) as reference instead.
+    # When thumb is closed → tip is near the index base → small distance.
+    # When thumb is open → tip moves away from index base → large distance.
+    # We compare against dist(index_mcp, thumb_MCP) as the threshold
+    thumb_extended = dist_sq(index_mcp, landmarks[4]) > dist_sq(index_mcp, landmarks[2])
 
-    # If wrist is left of pinky base → right hand (mirrored camera).
-    # Right hand thumb opens leftward: tip.x < joint.x = open.
-    if wrist_x < pinky_mcp_x:
-        fingers.append(thumb_tip_x < thumb_joint_x)
-    else:
-        fingers.append(thumb_tip_x > thumb_joint_x)
-
-    # --- INDEX, MIDDLE, RING, PINKY ---
-    # Compare tip.y vs joint.y. Lower y = higher on screen.
+    # --- OTHER FINGERS ---
+    # For each finger, compare:
+    #   dist²(wrist, tip) vs dist²(wrist, pip_joint)
+    # Works in any hand orientation because distances don't depend on direction.
     finger_pairs = [
-        (8, 6), (12, 10), (16, 14), (20, 18),
+        (8, 6),    # Index:  tip=8,  PIP joint=6
+        (12, 10),  # Middle: tip=12, PIP joint=10
+        (16, 14),  # Ring:   tip=16, PIP joint=14
+        (20, 18),  # Pinky:  tip=20, PIP joint=18
     ]
+
+    fingers = [thumb_extended]
     for tip_id, joint_id in finger_pairs:
-        fingers.append(landmarks[tip_id].y < landmarks[joint_id].y)
+        tip_farther = dist_sq(wrist, landmarks[tip_id]) > dist_sq(wrist, landmarks[joint_id])
+        fingers.append(tip_farther)
 
     return fingers
 
@@ -321,10 +341,6 @@ def main():
         # Mirror the image so it feels like a mirror.
         frame = cv2.flip(frame, 1)
         height, width, _ = frame.shape
-
-        # Darken the frame slightly for a cinematic look.
-        # alpha=0.8 means each pixel keeps 80% of its brightness.
-        # frame = cv2.convertScaleAbs(frame, alpha=0.8, beta=0)
 
         # Convert BGR → RGB and wrap in a MediaPipe Image for the model.
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
