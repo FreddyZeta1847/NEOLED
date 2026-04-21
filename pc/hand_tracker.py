@@ -71,16 +71,18 @@ def detect_fingers(landmarks):
     """
 
     wrist = landmarks[0]
-    index_mcp = landmarks[5]  # base of the index finger
 
-    # --- THUMB (special case) ---
-    # The thumb doesn't curl toward the wrist like other fingers — it curls
-    # ACROSS the palm, staying roughly the same distance from the wrist.
-    # So we use the INDEX FINGER BASE (landmark 5) as reference instead.
-    # When thumb is closed → tip is near the index base → small distance.
-    # When thumb is open → tip moves away from index base → large distance.
-    # We compare against dist(index_mcp, thumb_MCP) as the threshold
-    thumb_extended = dist_sq(index_mcp, landmarks[4]) > dist_sq(index_mcp, landmarks[2])
+    # --- THUMB (x-coordinate approach) ---
+    # The thumb moves sideways, so we compare x-coordinates of tip vs joint.
+    # We check wrist vs pinky base to determine left/right hand.
+    thumb_tip_x = landmarks[4].x
+    thumb_joint_x = landmarks[3].x
+    pinky_mcp_x = landmarks[17].x
+
+    if wrist.x < pinky_mcp_x:
+        thumb_extended = thumb_tip_x < thumb_joint_x
+    else:
+        thumb_extended = thumb_tip_x > thumb_joint_x
 
     # --- OTHER FINGERS ---
     # For each finger, compare:
